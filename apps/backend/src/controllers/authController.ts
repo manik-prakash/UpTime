@@ -5,7 +5,10 @@ import { Request, Response, NextFunction } from "express";
 import prisma from "@repo/db/client";
 import { authSchema } from "@repo/common/types";
 
-const secret = process.env.SECRET || "skjvbskjbvjksbvskbsdbvksdvbdskjvbksjsbdbvkjsdbvkj";
+const secret = process.env.JWT_SECRET_WORD;
+if (!secret) {
+    throw new Error("JWT_SECRET not found");
+}
 
 interface AuthBody {
     username: string;
