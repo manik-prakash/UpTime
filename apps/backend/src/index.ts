@@ -30,7 +30,7 @@ app.post("/website", verify, async (req, res) => {
     const website = await prisma.website.create({
         data: {
             url: req.body.url,
-            userId: req.body.userId
+            userId: req.body.userID
         }
     })
     res.json({
@@ -38,10 +38,10 @@ app.post("/website", verify, async (req, res) => {
     })
 });
 
-app.get("/status/:websiteId", verify, async (req, res) => {
+app.get("/website/status/:websiteId", verify, async (req, res) => {
     const website = await prisma.website.findFirst({
         where: {
-            userId: req.body.userId,
+            userId: req.body.userID,
             id: req.params.websiteId,
         },
         include: {
