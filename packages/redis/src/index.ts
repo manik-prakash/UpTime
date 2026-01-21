@@ -13,10 +13,11 @@ const stream_name = "uptime:website";
 
 export async function pushtoStream({ id, url }: website) {
     const res = await client.xAdd(
-        stream_name, '*', {
-        id,
-        url
-    }
+        stream_name, '*', 
+        {
+            id,
+            url
+        }
     )
     return res;
 }
