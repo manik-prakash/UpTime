@@ -83,5 +83,4 @@ async function worker() {
 
 worker().catch((error) => {
     console.error('Fatal worker error:', error);
-    process.exit(1);
 });
