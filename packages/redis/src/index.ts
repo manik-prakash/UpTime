@@ -19,6 +19,12 @@ await client.connect();
 
 const stream_name = "uptime:website";
 
+export async function grpCreate() {
+    await client.xGroupCreate(stream_name, 'asia', '$', {
+        MKSTREAM: true
+    });
+}
+
 export async function pushtoStream({ id, url }: website) {
     const res = await client.xAdd(
         stream_name, '*',
@@ -30,7 +36,7 @@ export async function pushtoStream({ id, url }: website) {
     return res;
 }
 
-export async function readGroups(CONSUMER_GROUP: string, workerID: string): Promise<StreamMessage[] | null> {
+export async function readGroups(CONSUMER_GROUP: string, workerID: string): Promise<StreamMessage[] | null | any[]> {
     const res = await client.xReadGroup(
         CONSUMER_GROUP,
         workerID,

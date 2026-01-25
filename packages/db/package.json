@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "exports":{
-    "./client": "./src/index.ts"
+  "exports": {
+    "./client": {
+      "types":"./src/index.ts",
+      "default":"./dist/index.js"
+    }
   },
   "scripts": {
     "db:generate": "prisma generate",
@@ -24,6 +27,6 @@
     "@prisma/client": "^7.2.0",
     "dotenv": "^16.0.3",
     "pg": "^8.16.3",
-    "prisma": "^7.2.0"
+    "prisma": "^6.19.2"
   }
 }
