@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import express from 'express'
 import cors from 'cors'
-import prisma from "@repo/db/client";
 import authRoute from './routes/authRoute';
 import { verify } from './middleware/verify';
 const app = express();
@@ -21,53 +20,6 @@ app.get('/health', (req, res) => {
 })
 
 app.use("/auth", authRoute);
-
-app.post("/website", verify, async (req, res) => {
-    if (!req.body.url) {
-        res.status(411).json({});
-        return
-    }
-    const website = await prisma.website.create({
-        data: {
-            url: req.body.url,
-            userId: req.body.userID
-        }
-    })
-    res.json({
-        id: website.id
-    })
-});
-
-app.get("/website/status/:websiteId", verify, async (req, res) => {
-    const website = await prisma.website.findFirst({
-        where: {
-            userId: req.body.userID,
-            id: req.params.websiteId,
-        },
-        include: {
-            ticks: {
-                orderBy: [{
-                    createdAt: 'desc',
-                }],
-                take: 1
-            }
-        }
-    })
-
-    if (!website) {
-        res.status(409).json({
-            message: "Not found"
-        })
-        return;
-    }
-
-    res.json({
-        url: website.url,
-        id: website.id,
-        user_id: website.userId
-    })
-
-})
 
 
 app.listen(PORT, () => {

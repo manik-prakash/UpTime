@@ -15,3 +15,16 @@ export const authSchema = z.object({
     })
     .trim(),
 });
+
+export const createWebsiteSchema = z.object({
+  url: z
+    .string({ message: "URL is required." })
+    .url({ message: "Please provide a valid URL." })
+    .trim(),
+});
+
+export const getWebsiteParamsSchema = z.object({
+  websiteId: z
+    .string({ message: "Website ID is required." })
+    .uuid({ message: "Website ID must be a valid UUID." }),
+});
