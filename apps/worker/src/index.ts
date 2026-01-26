@@ -1,9 +1,9 @@
-import prisma from "@repo/db/client";
+import { prisma } from "@repo/db/client";
 import { readGroups, isAccepted } from "@repo/redis/client";
 import axios from "axios";
 
-const REGION_ID = process.env.REGION_ID!;
-const WORKER_ID = process.env.WORKER_ID!;
+const REGION_ID = process.env.REGION_ID! || "asia";
+const WORKER_ID = process.env.WORKER_ID! || "worker-1";
 
 if (!REGION_ID) {
     throw new Error("REGION_ID environment variable not provided");
@@ -18,12 +18,12 @@ async function checkWebsite(id: string, url: string): Promise<void> {
 
     try {
         await axios.get(url, {
-            timeout: 10000, 
-            validateStatus: (status) => status < 500 
+            timeout: 10000,
+            validateStatus: (status) => status < 500
         });
 
         const endTime = Date.now();
-        
+
         await prisma.websiteTick.create({
             data: {
                 responseTimeMs: endTime - startTime,
@@ -52,7 +52,7 @@ async function checkWebsite(id: string, url: string): Promise<void> {
 
 async function worker() {
     console.log(`Worker started: ${WORKER_ID} in region: ${REGION_ID}`);
-    
+
     while (true) {
         try {
             const response = await readGroups(REGION_ID, WORKER_ID);
@@ -67,7 +67,7 @@ async function worker() {
                 response.map(async ({ id, message }) => {
                     try {
                         await checkWebsite(message.id, message.url);
-                        
+
                         await isAccepted(REGION_ID, id);
                     } catch (error) {
                         console.error(`error processing ${id}:`, error);
@@ -76,7 +76,7 @@ async function worker() {
             );
 
         } catch (error) {
-            console.error('Worker error:', error);``
+            console.error('Worker error:', error); ``
         }
     }
 }

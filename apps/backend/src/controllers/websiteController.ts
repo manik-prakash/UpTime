@@ -1,4 +1,4 @@
-import prisma from "@repo/db/client";
+import {prisma} from "@repo/db/client";
 import { Request, Response, NextFunction } from "express";
 import { createWebsiteSchema, getWebsiteParamsSchema } from "@repo/common/types";
 

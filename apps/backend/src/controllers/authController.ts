@@ -2,7 +2,7 @@ import 'dotenv/config';
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { Request, Response, NextFunction } from "express";
-import prisma from "@repo/db/client";
+import {prisma} from "@repo/db/client";
 import { authSchema } from "@repo/common/types";
 
 const secret = process.env.JWT_SECRET_WORD;
