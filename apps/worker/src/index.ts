@@ -2,16 +2,27 @@ import { prisma } from "@repo/db/client";
 import { readGroups, isAccepted } from "@repo/redis/client";
 import axios from "axios";
 
-const REGION_ID = process.env.REGION_ID! || "asia";
+const REGION_NAME = process.env.REGION_ID! || "asia";
 const WORKER_ID = process.env.WORKER_ID! || "worker-1";
 
-if (!REGION_ID) {
-    throw new Error("REGION_ID environment variable not provided");
+if (!REGION_NAME) {
+    throw new Error("region id env var missing");
 }
 
 if (!WORKER_ID) {
-    throw new Error("WORKER_ID environment variable not provided");
+    throw new Error("worker id env var missing");
 }
+
+const region = await prisma.region.findUnique({
+    where: { name: REGION_NAME }
+});
+
+if (!region) {
+    throw new Error(`region "${REGION_NAME}" not found, run seed first`);
+}
+
+const REGION_UUID = region.id;
+console.log(`region ${REGION_NAME} -> ${REGION_UUID}`);
 
 async function checkWebsite(id: string, url: string): Promise<void> {
     const startTime = Date.now();
@@ -28,12 +39,12 @@ async function checkWebsite(id: string, url: string): Promise<void> {
             data: {
                 responseTimeMs: endTime - startTime,
                 status: "Up",
-                regionId: REGION_ID,
+                regionId: REGION_UUID,
                 websiteId: id
             }
         });
 
-        console.log(`${url} - Up (${endTime - startTime}ms)`);
+        console.log(`${url} up ${endTime - startTime}ms`);
     } catch (error) {
 
         const endTime = Date.now();
@@ -41,46 +52,46 @@ async function checkWebsite(id: string, url: string): Promise<void> {
             data: {
                 responseTimeMs: endTime - startTime,
                 status: "Down",
-                regionId: REGION_ID,
+                regionId: REGION_UUID,
                 websiteId: id
             }
         });
 
-        console.log(`${url} - Down (${endTime - startTime}ms)`);
+        console.log(`${url} down ${endTime - startTime}ms`);
     }
 }
 
 async function worker() {
-    console.log(`Worker started: ${WORKER_ID} in region: ${REGION_ID}`);
+    console.log(`worker ${WORKER_ID} started in ${REGION_NAME}`);
 
     while (true) {
         try {
-            const response = await readGroups(REGION_ID, WORKER_ID);
+            const response = await readGroups(REGION_NAME, WORKER_ID);
 
             if (!response || response.length === 0) {
                 continue;
             }
 
-            console.log(`processing ${response.length} websites`);
+            console.log(`got ${response.length} websites`);
 
             await Promise.all(
                 response.map(async ({ id, message }) => {
                     try {
                         await checkWebsite(message.id, message.url);
 
-                        await isAccepted(REGION_ID, id);
+                        await isAccepted(REGION_NAME, id);
                     } catch (error) {
-                        console.error(`error processing ${id}:`, error);
+                        console.error(`failed ${id}:`, error);
                     }
                 })
             );
 
         } catch (error) {
-            console.error('Worker error:', error); ``
+            console.error('worker error:', error);
         }
     }
 }
 
 worker().catch((error) => {
-    console.error('Fatal worker error:', error);
+    console.error('fatal error:', error);
 });

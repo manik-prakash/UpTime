@@ -2,12 +2,12 @@ import 'dotenv/config';
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { Request, Response, NextFunction } from "express";
-import {prisma} from "@repo/db/client";
+import { prisma } from "@repo/db/client";
 import { authSchema } from "@repo/common/types";
 
 const secret = process.env.JWT_SECRET_WORD;
 if (!secret) {
-    throw new Error("JWT_SECRET not found");
+    throw new Error("jwt secret not found");
 }
 
 interface AuthBody {
@@ -23,14 +23,14 @@ export const signin = async (
     try {
         const parsedData = authSchema.safeParse(req.body);
         if (!parsedData.success) {
-            console.log(parsedData.error);
+            console.log('validation failed:', parsedData.error);
             res.json({
                 message: "Incorrect inputs"
             })
             return;
         }
 
-        const { username , password } = req.body;
+        const { username, password } = req.body;
 
         const user = await prisma.user.findUnique({
             where: { username },
@@ -68,7 +68,7 @@ export const signup = async (
     try {
         const parsedData = authSchema.safeParse(req.body);
         if (!parsedData.success) {
-            console.log(parsedData.error);
+            console.log('validation failed:', parsedData.error);
             res.json({
                 message: "Incorrect inputs"
             })

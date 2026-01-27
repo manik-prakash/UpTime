@@ -14,18 +14,16 @@ type StreamMessage = {
 };
 
 const client = createClient();
-client.on('error', err => console.log('Redis Client Error', err));
+client.on('error', err => console.log('redis error', err));
 await client.connect();
+console.log('redis connected');
 
 const stream_name = "uptime:website";
 
-export async function grpCreate() {
-    await client.xGroupCreate(stream_name, 'asia', '$', {
-        MKSTREAM: true
-    });
-}
+export { initializeRedis } from './init.js';
 
 export async function pushtoStream({ id, url }: website) {
+    console.log(`pushing ${id} - ${url}`);
     const res = await client.xAdd(
         stream_name, '*',
         {
@@ -33,10 +31,12 @@ export async function pushtoStream({ id, url }: website) {
             url
         }
     )
+    console.log(`added to stream: ${res}`);
     return res;
 }
 
 export async function readGroups(CONSUMER_GROUP: string, workerID: string): Promise<StreamMessage[] | null | any[]> {
+    console.log(`reading from ${CONSUMER_GROUP}, worker: ${workerID}`);
     const res = await client.xReadGroup(
         CONSUMER_GROUP,
         workerID,
@@ -50,22 +50,28 @@ export async function readGroups(CONSUMER_GROUP: string, workerID: string): Prom
     )
 
     if (!res) {
+        console.log('no messages');
         return null;
     }
+
     // @ts-ignore
-    return res[0].messages.map(msg => ({
+    const messages = res[0].messages.map(msg => ({
         id: msg.id,
         message: {
             id: msg.message.id as string,
             url: msg.message.url as string
         }
     }));
+
+    console.log(`got ${messages.length} messages`);
+    return messages;
 }
 
 export async function isAccepted(CONSUMER_GROUP: string, eventId: string) {
+    console.log(`acking ${eventId}`);
     const res = await client.xAck(stream_name, CONSUMER_GROUP, eventId);
+    console.log(`acked: ${res}`);
     return res;
 }
 
-
-// await client.quit();
+export { client as redisClient };

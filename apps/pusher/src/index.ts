@@ -1,4 +1,4 @@
-import {prisma} from "@repo/db/client";
+import { prisma } from "@repo/db/client";
 import { pushtoStream } from "@repo/redis/client"
 
 async function pusher() {
@@ -11,9 +11,9 @@ async function pusher() {
             await pushtoStream(website);
         }
 
-        console.log(`pushed ${websites.length} websites to stream`);
+        console.log(`pushed ${websites.length} websites`);
     } catch (error) {
-        console.error('error in pusher:', error);
+        console.error('pusher error:', error);
     } finally {
         setTimeout(pusher, 3 * 60 * 1000);
     }
