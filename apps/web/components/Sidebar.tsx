@@ -23,15 +23,6 @@ const navItems = [
         ),
     },
     {
-        label: "Regions",
-        href: "/dashboard/regions",
-        icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-            </svg>
-        ),
-    },
-    {
         label: "Incidents",
         href: "/dashboard/incidents",
         icon: (
@@ -59,8 +50,8 @@ export default function Sidebar() {
             {/* Desktop Sidebar */}
             <aside className="hidden md:flex flex-col w-64 bg-primary min-h-screen">
                 {/* Logo */}
-                <div className="p-4 border-b border-secondary">
-                    <Link href="/dashboard" className="flex items-center gap-2 text-white">
+                <div className="p-5 border-b border-secondary/50">
+                    <Link href="/dashboard" className="flex items-center gap-2.5 text-white">
                         <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -70,41 +61,57 @@ export default function Sidebar() {
                             >
                                 <path
                                     fillRule="evenodd"
-                                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                    d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z"
                                     clipRule="evenodd"
                                 />
                             </svg>
                         </div>
-                        <span className="text-xl font-bold">Uptime</span>
+                        <span className="text-lg font-bold">BetterUptime</span>
                     </Link>
                 </div>
 
                 {/* Navigation */}
                 <nav className="flex-1 p-4">
-                    <ul className="space-y-2">
+                    <ul className="space-y-1">
                         {navItems.map((item) => {
                             const isActive = pathname === item.href;
                             return (
                                 <li key={item.href}>
                                     <Link
                                         href={item.href}
-                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive
+                                        className={`
+                                            flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
+                                            ${isActive
                                                 ? "bg-accent text-white"
-                                                : "text-light hover:bg-secondary hover:text-white"
-                                            }`}
+                                                : "text-light hover:bg-secondary/50 hover:text-white"
+                                            }
+                                        `}
                                     >
                                         {item.icon}
-                                        <span>{item.label}</span>
+                                        <span className="font-medium">{item.label}</span>
                                     </Link>
                                 </li>
                             );
                         })}
                     </ul>
                 </nav>
+
+                {/* Bottom section */}
+                <div className="p-4 border-t border-secondary/50">
+                    <div className="flex items-center gap-3 px-3 py-2 text-light">
+                        <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                            JD
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white truncate">John Doe</p>
+                            <p className="text-xs text-light truncate">Free Plan</p>
+                        </div>
+                    </div>
+                </div>
             </aside>
 
             {/* Mobile Bottom Navigation */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-primary border-t border-secondary z-50">
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-primary border-t border-secondary/50 z-50">
                 <ul className="flex justify-around">
                     {navItems.slice(0, 4).map((item) => {
                         const isActive = pathname === item.href;
@@ -112,11 +119,13 @@ export default function Sidebar() {
                             <li key={item.href}>
                                 <Link
                                     href={item.href}
-                                    className={`flex flex-col items-center gap-1 px-4 py-3 transition-colors ${isActive ? "text-accent" : "text-light"
-                                        }`}
+                                    className={`
+                                        flex flex-col items-center gap-1 px-4 py-3 transition-colors
+                                        ${isActive ? "text-accent" : "text-light"}
+                                    `}
                                 >
                                     {item.icon}
-                                    <span className="text-xs">{item.label}</span>
+                                    <span className="text-xs font-medium">{item.label}</span>
                                 </Link>
                             </li>
                         );

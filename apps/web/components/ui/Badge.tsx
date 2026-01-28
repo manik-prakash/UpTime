@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 
 interface BadgeProps {
     children: ReactNode;
-    variant?: "up" | "down" | "neutral";
+    variant?: "up" | "down" | "degraded" | "neutral";
     className?: string;
 }
 
@@ -12,23 +12,25 @@ export default function Badge({
     className = "",
 }: BadgeProps) {
     const variants = {
-        up: "bg-up/10 text-up border-up/20",
-        down: "bg-down/10 text-down border-down/20",
-        neutral: "bg-light/20 text-secondary border-light/30",
+        up: "bg-up text-white",
+        down: "bg-down text-white",
+        degraded: "bg-degraded text-white",
+        neutral: "bg-light/50 text-primary",
     };
 
     return (
         <span
             className={`
-        inline-flex items-center
-        px-2.5 py-0.5
-        text-xs font-medium
-        rounded-full
-        border
-        ${variants[variant]}
-        ${className}
-      `}
+                inline-flex items-center gap-1.5
+                px-2.5 py-1
+                text-xs font-semibold
+                rounded-full
+                ${variants[variant]}
+                ${className}
+            `}
         >
+            {/* Status dot */}
+            <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
             {children}
         </span>
     );
