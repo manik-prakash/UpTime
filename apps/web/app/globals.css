@@ -1,1 +1,20 @@
 @import "tailwindcss";
+
+/* Custom Color Palette for Uptime */
+@theme {
+  --color-primary: #132A13;
+  --color-secondary: #31572C;
+  --color-accent: #4F772D;
+  --color-light: #90A955;
+  --color-background: #ECF39E;
+  
+  /* Status colors */
+  --color-up: #22c55e;
+  --color-down: #ef4444;
+}
+
+/* Base styles */
+body {
+  @apply bg-background text-primary;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
