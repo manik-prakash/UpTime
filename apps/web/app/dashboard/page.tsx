@@ -1,8 +1,14 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
-import { mockStats, mockWebsites, mockTicks, Website, WebsiteTick, getTicksForWebsite } from "@/lib/mockData";
+import { getWebsites, GetWebsitesResponse } from "@/lib/api";
 
-// Stat icons
+type Website = NonNullable<GetWebsitesResponse['websites']>[number];
+type Tick = Website['ticks'][number];
+
 const icons = {
     globe: (
         <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -26,7 +32,6 @@ const icons = {
     ),
 };
 
-// Stat Card Component
 function StatCard({
     label,
     value,
@@ -63,9 +68,7 @@ function StatCard({
     );
 }
 
-// Uptime Bar Component - shows last 30 checks as colored bars
-function UptimeBar({ ticks }: { ticks: WebsiteTick[] }) {
-    // Take last 30 ticks or pad with empty
+function UptimeBar({ ticks }: { ticks: Tick[] }) {
     const bars = ticks.slice(0, 30);
 
     return (
@@ -75,13 +78,12 @@ function UptimeBar({ ticks }: { ticks: WebsiteTick[] }) {
                     key={tick.id || i}
                     className={`
                         w-1.5 rounded-sm flex-shrink-0
-                        ${tick.status === "up" ? "bg-up" : "bg-down"}
+                        ${tick.status === "Up" ? "bg-up" : "bg-down"}
                         hover:opacity-80 cursor-pointer
                     `}
-                    title={`${new Date(tick.timestamp).toLocaleString()} - ${tick.status.toUpperCase()}`}
+                    title={`${new Date(tick.createdAt).toLocaleString()} - ${tick.status}`}
                 />
             ))}
-            {/* Fill remaining with empty bars if less than 30 */}
             {Array.from({ length: Math.max(0, 30 - bars.length) }).map((_, i) => (
                 <div
                     key={`empty-${i}`}
@@ -92,26 +94,37 @@ function UptimeBar({ ticks }: { ticks: WebsiteTick[] }) {
     );
 }
 
-// Monitor Card Component
 function MonitorCard({ website }: { website: Website }) {
-    const ticks = getTicksForWebsite(website.id);
-    const upCount = ticks.filter(t => t.status === "up").length;
+    const ticks = website.ticks;
+    const upCount = ticks.filter(t => t.status === "Up").length;
     const uptimePercent = ticks.length > 0 ? ((upCount / ticks.length) * 100).toFixed(2) : "0.00";
+    const latestTick = ticks[0];
+    const status = latestTick?.status === "Up" ? "up" : "down";
+    const responseTime = latestTick?.responseTimeMs || 0;
+
+    const getWebsiteName = (url: string): string => {
+        try {
+            const urlObj = new URL(url);
+            return urlObj.hostname;
+        } catch {
+            return url;
+        }
+    };
 
     return (
         <Card>
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-primary">{website.name}</h3>
-                    <Badge variant={website.status === "up" ? "up" : "down"}>
-                        {website.status === "up" ? "Operational" : "Down"}
+                    <h3 className="font-semibold text-primary">{getWebsiteName(website.url)}</h3>
+                    <Badge variant={status === "up" ? "up" : "down"}>
+                        {status === "up" ? "Operational" : "Down"}
                     </Badge>
                 </div>
-                <button className="text-secondary hover:text-primary p-1 rounded-lg hover:bg-surface-dark">
+                <Link href={`/dashboard/monitors/${website.id}`} className="text-secondary hover:text-primary p-1 rounded-lg hover:bg-surface-dark">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                </button>
+                </Link>
             </div>
 
             <a
@@ -128,13 +141,13 @@ function MonitorCard({ website }: { website: Website }) {
 
             <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                    <p className="text-xs text-accent font-medium mb-1">Uptime (30d)</p>
+                    <p className="text-xs text-accent font-medium mb-1">Uptime (30 checks)</p>
                     <p className="text-2xl font-bold text-primary">{uptimePercent}%</p>
                 </div>
                 <div className="text-right">
-                    <p className="text-xs text-secondary font-medium mb-1">Avg Response</p>
+                    <p className="text-xs text-secondary font-medium mb-1">Response Time</p>
                     <p className="text-2xl font-bold text-primary">
-                        {website.responseTime > 0 ? `${website.responseTime}ms` : "—"}
+                        {responseTime > 0 ? `${responseTime}ms` : "—"}
                     </p>
                 </div>
             </div>
@@ -147,7 +160,6 @@ function MonitorCard({ website }: { website: Website }) {
     );
 }
 
-// Alert Banner Component
 function AlertBanner({ count }: { count: number }) {
     if (count === 0) return null;
 
@@ -167,51 +179,87 @@ function AlertBanner({ count }: { count: number }) {
 }
 
 export default function DashboardPage() {
-    const downCount = mockWebsites.filter(w => w.status === "down").length;
-    const upCount = mockWebsites.filter(w => w.status === "up").length;
+    const [websites, setWebsites] = useState<Website[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Calculate average uptime
-    const avgUptime = 98.74; // Mock value
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await getWebsites();
+                if (response.websites) {
+                    setWebsites(response.websites);
+                }
+            } catch (err) {
+                console.error("Failed to load websites", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <div className="text-secondary">Loading dashboard...</div>
+            </div>
+        );
+    }
+
+    const downCount = websites.filter(w => {
+        const latestTick = w.ticks[0];
+        return !latestTick || latestTick.status !== "Up";
+    }).length;
+
+    const upCount = websites.length - downCount;
+    const totalMonitors = websites.length;
+
+    const allTicks = websites.flatMap(w => w.ticks);
+    const avgUptime = allTicks.length > 0
+        ? ((allTicks.filter(t => t.status === "Up").length / allTicks.length) * 100).toFixed(2)
+        : "0.00";
+
+    const validResponseTimes = allTicks.filter(t => t.responseTimeMs > 0);
+    const avgResponseTime = validResponseTimes.length > 0
+        ? Math.round(validResponseTimes.reduce((sum, t) => sum + t.responseTimeMs, 0) / validResponseTimes.length)
+        : 0;
 
     return (
         <div className="space-y-6">
-            {/* Header with Add Monitor button */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
                     <p className="text-secondary text-sm">Monitor your websites and services in real-time</p>
                 </div>
-                <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-accent text-white font-medium rounded-lg hover:bg-secondary transition-colors">
+                <Link href="/dashboard/monitors" className="inline-flex items-center gap-2 px-4 py-2.5 bg-accent text-white font-medium rounded-lg hover:bg-secondary transition-colors">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                     Add Monitor
-                </button>
+                </Link>
             </div>
 
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     label="Total Monitors"
-                    value={mockStats.totalWebsites}
+                    value={totalMonitors}
                     subtitle="Active monitoring"
                     icon={icons.globe}
                 />
                 <StatCard
                     label="Operational"
                     value={upCount}
-                    subtitle={`${Math.round((upCount / mockStats.totalWebsites) * 100)}% healthy`}
+                    subtitle={totalMonitors > 0 ? `${Math.round((upCount / totalMonitors) * 100)}% healthy` : "No monitors"}
                     icon={icons.check}
                 />
                 <StatCard
                     label="Avg Uptime"
                     value={`${avgUptime}%`}
                     icon={icons.chart}
-                    trend={{ value: "+0.5% from last period", isPositive: true }}
                 />
                 <StatCard
                     label="Avg Response"
-                    value={`${mockStats.avgResponseTime}ms`}
+                    value={avgResponseTime > 0 ? `${avgResponseTime}ms` : "—"}
                     icon={icons.clock}
                 />
             </div>
@@ -219,24 +267,21 @@ export default function DashboardPage() {
             {/* Alert Banner */}
             <AlertBanner count={downCount} />
 
-            {/* Search */}
-            <div className="relative">
-                <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                    type="text"
-                    placeholder="Search monitors..."
-                    className="w-full pl-12 pr-4 py-3 bg-surface border border-light/30 rounded-xl text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
-                />
-            </div>
-
             {/* Monitor Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {mockWebsites.map((website) => (
-                    <MonitorCard key={website.id} website={website} />
-                ))}
-            </div>
+            {websites.length === 0 ? (
+                <Card className="text-center py-12">
+                    <p className="text-secondary mb-4">No monitors yet</p>
+                    <Link href="/dashboard/monitors" className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-white font-medium rounded-lg hover:bg-secondary transition-colors">
+                        Add your first monitor
+                    </Link>
+                </Card>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {websites.map((website) => (
+                        <MonitorCard key={website.id} website={website} />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

@@ -1,24 +1,68 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Table from "@/components/ui/Table";
-import { getWebsiteById, getTicksForWebsite } from "@/lib/mockData";
+import { getWebsiteById, deleteWebsite, GetWebsiteByIdResponse } from "@/lib/api";
 
-interface MonitorDetailPageProps {
-    params: Promise<{ id: string }>;
-}
+type Website = NonNullable<GetWebsiteByIdResponse['website']>;
+type Tick = Website['ticks'][number];
 
-export default async function MonitorDetailPage({ params }: MonitorDetailPageProps) {
-    const { id } = await params;
-    const website = getWebsiteById(id);
-    const ticks = getTicksForWebsite(id);
+export default function MonitorDetailPage() {
+    const params = useParams();
+    const router = useRouter();
+    const websiteId = params.id as string;
 
-    if (!website) {
+    const [website, setWebsite] = useState<Website | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await getWebsiteById(websiteId);
+                if (response.website) {
+                    setWebsite(response.website);
+                } else {
+                    setError(response.message || "Website not found");
+                }
+            } catch (err) {
+                setError("Failed to load website");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
+    }, [websiteId]);
+
+    const handleDelete = async () => {
+        if (!confirm("Are you sure you want to delete this monitor?")) return;
+
+        try {
+            await deleteWebsite(websiteId);
+            router.push("/dashboard/monitors");
+        } catch (err) {
+            setError("Failed to delete monitor");
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <div className="text-secondary">Loading monitor...</div>
+            </div>
+        );
+    }
+
+    if (error || !website) {
         return (
             <div className="text-center py-12">
                 <h1 className="text-2xl font-bold text-primary mb-2">Monitor Not Found</h1>
-                <p className="text-secondary mb-4">The monitor you&apos;re looking for doesn&apos;t exist.</p>
+                <p className="text-secondary mb-4">{error || "The monitor you're looking for doesn't exist."}</p>
                 <Link href="/dashboard/monitors">
                     <Button>Back to Monitors</Button>
                 </Link>
@@ -26,12 +70,28 @@ export default async function MonitorDetailPage({ params }: MonitorDetailPagePro
         );
     }
 
+    const ticks = website.ticks;
+    const latestTick = ticks[0];
+    const status = latestTick?.status === "Up" ? "up" : "down";
+    const responseTime = latestTick?.responseTimeMs || 0;
+    const upCount = ticks.filter(t => t.status === "Up").length;
+    const uptimePercent = ticks.length > 0 ? ((upCount / ticks.length) * 100).toFixed(2) : "0.00";
+
+    const getWebsiteName = (url: string): string => {
+        try {
+            const urlObj = new URL(url);
+            return urlObj.hostname;
+        } catch {
+            return url;
+        }
+    };
+
     const tickColumns = [
         {
-            key: "timestamp",
+            key: "createdAt",
             header: "Timestamp",
-            render: (tick: typeof ticks[0]) => {
-                const date = new Date(tick.timestamp);
+            render: (tick: Tick) => {
+                const date = new Date(tick.createdAt);
                 return date.toLocaleString();
             }
         },
@@ -39,17 +99,17 @@ export default async function MonitorDetailPage({ params }: MonitorDetailPagePro
         {
             key: "status",
             header: "Status",
-            render: (tick: typeof ticks[0]) => (
-                <Badge variant={tick.status === "up" ? "up" : "down"}>
-                    {tick.status.toUpperCase()}
+            render: (tick: Tick) => (
+                <Badge variant={tick.status === "Up" ? "up" : "down"}>
+                    {tick.status}
                 </Badge>
             )
         },
         {
-            key: "responseTime",
+            key: "responseTimeMs",
             header: "Response Time",
-            render: (tick: typeof ticks[0]) => (
-                tick.responseTime > 0 ? `${tick.responseTime}ms` : "—"
+            render: (tick: Tick) => (
+                tick.responseTimeMs > 0 ? `${tick.responseTimeMs}ms` : "—"
             )
         },
     ];
@@ -69,9 +129,9 @@ export default async function MonitorDetailPage({ params }: MonitorDetailPagePro
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <h1 className="text-2xl font-bold text-primary">{website.name}</h1>
-                            <Badge variant={website.status === "up" ? "up" : "down"}>
-                                {website.status.toUpperCase()}
+                            <h1 className="text-2xl font-bold text-primary">{getWebsiteName(website.url)}</h1>
+                            <Badge variant={status === "up" ? "up" : "down"}>
+                                {status.toUpperCase()}
                             </Badge>
                         </div>
                         <a
@@ -84,8 +144,11 @@ export default async function MonitorDetailPage({ params }: MonitorDetailPagePro
                         </a>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="secondary">Edit</Button>
-                        <Button variant="outline" className="text-down border-down hover:bg-down hover:text-white">
+                        <Button
+                            variant="outline"
+                            className="text-down border-down hover:bg-down hover:text-white"
+                            onClick={handleDelete}
+                        >
                             Delete
                         </Button>
                     </div>
@@ -94,22 +157,22 @@ export default async function MonitorDetailPage({ params }: MonitorDetailPagePro
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-light/30">
                     <div>
                         <div className="text-sm text-secondary">Region</div>
-                        <div className="font-medium text-primary">{website.region}</div>
+                        <div className="font-medium text-primary">{latestTick?.region || "—"}</div>
                     </div>
                     <div>
                         <div className="text-sm text-secondary">Response Time</div>
                         <div className="font-medium text-primary">
-                            {website.responseTime > 0 ? `${website.responseTime}ms` : "—"}
+                            {responseTime > 0 ? `${responseTime}ms` : "—"}
                         </div>
                     </div>
                     <div>
-                        <div className="text-sm text-secondary">Check Interval</div>
-                        <div className="font-medium text-primary">{website.interval}s</div>
+                        <div className="text-sm text-secondary">Uptime</div>
+                        <div className="font-medium text-primary">{uptimePercent}%</div>
                     </div>
                     <div>
                         <div className="text-sm text-secondary">Last Checked</div>
                         <div className="font-medium text-primary">
-                            {new Date(website.lastChecked).toLocaleTimeString()}
+                            {latestTick ? new Date(latestTick.createdAt).toLocaleTimeString() : "—"}
                         </div>
                     </div>
                 </div>
@@ -120,7 +183,11 @@ export default async function MonitorDetailPage({ params }: MonitorDetailPagePro
                 <h2 className="text-lg font-semibold text-primary mb-4">
                     Recent Checks ({ticks.length})
                 </h2>
-                <Table columns={tickColumns} data={ticks} />
+                {ticks.length > 0 ? (
+                    <Table columns={tickColumns} data={ticks} />
+                ) : (
+                    <p className="text-secondary text-center py-8">No checks recorded yet</p>
+                )}
             </Card>
         </div>
     );

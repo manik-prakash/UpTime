@@ -11,7 +11,7 @@ if (!secret) {
 }
 
 interface AuthBody {
-    username: string;
+    email: string;
     password: string;
 }
 
@@ -24,16 +24,17 @@ export const signin = async (
         const parsedData = authSchema.safeParse(req.body);
         if (!parsedData.success) {
             console.log('validation failed:', parsedData.error);
-            res.json({
-                message: "Incorrect inputs"
+            res.status(400).json({
+                message: "Incorrect inputs",
+                errors: parsedData.error.issues
             })
             return;
         }
 
-        const { username, password } = req.body;
+        const { email, password } = parsedData.data;
 
         const user = await prisma.user.findUnique({
-            where: { username },
+            where: { email },
         });
 
         if (!user) {
@@ -46,7 +47,7 @@ export const signin = async (
         }
 
         const token = jwt.sign(
-            { userID: user.id, username: user.username },
+            { userID: user.id, email: user.email },
             secret,
             { expiresIn: "4h" }
         );
@@ -69,33 +70,34 @@ export const signup = async (
         const parsedData = authSchema.safeParse(req.body);
         if (!parsedData.success) {
             console.log('validation failed:', parsedData.error);
-            res.json({
-                message: "Incorrect inputs"
+            res.status(400).json({
+                message: "Incorrect inputs",
+                errors: parsedData.error.issues
             })
             return;
         }
 
-        const { username, password } = req.body;
+        const { email, password } = parsedData.data;
 
         const existingUser = await prisma.user.findUnique({
-            where: { username },
+            where: { email },
         });
 
         if (existingUser) {
-            return res.status(409).json({ message: "use different username." });
+            return res.status(409).json({ message: "Email already registered." });
         }
 
         const hash = await bcrypt.hash(password, 10);
 
         const newUser = await prisma.user.create({
             data: {
-                username,
+                email,
                 password: hash,
             },
         });
 
         const token = jwt.sign(
-            { userID: newUser.id, username: newUser.username },
+            { userID: newUser.id, email: newUser.email },
             secret,
             { expiresIn: "4h" }
         );

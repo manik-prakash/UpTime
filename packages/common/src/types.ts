@@ -1,9 +1,9 @@
 import z from "zod";
 
 export const authSchema = z.object({
-  username: z
+  email: z
     .string()
-    .min(2, { message: "Name must be at least 2 characters long." })
+    .email({ message: "Please provide a valid email address." })
     .trim(),
   password: z
     .string()
