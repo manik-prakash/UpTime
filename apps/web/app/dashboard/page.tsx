@@ -264,10 +264,10 @@ export default function DashboardPage() {
                 />
             </div>
 
-            {/* Alert Banner */}
+
             <AlertBanner count={downCount} />
 
-            {/* Monitor Cards Grid */}
+
             {websites.length === 0 ? (
                 <Card className="text-center py-12">
                     <p className="text-secondary mb-4">No monitors yet</p>

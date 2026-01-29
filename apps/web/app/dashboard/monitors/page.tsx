@@ -98,7 +98,7 @@ export default function MonitorsPage() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
+
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-primary">Monitors</h1>
@@ -120,7 +120,7 @@ export default function MonitorsPage() {
                 </div>
             )}
 
-            {/* Website Cards */}
+
             {websites.length === 0 ? (
                 <Card className="text-center py-12">
                     <p className="text-secondary mb-4">No monitors yet</p>
@@ -186,7 +186,7 @@ export default function MonitorsPage() {
                 </div>
             )}
 
-            {/* Add Monitor Modal */}
+
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add New Monitor">
                 <form className="space-y-4" onSubmit={handleAddMonitor}>
                     <Input

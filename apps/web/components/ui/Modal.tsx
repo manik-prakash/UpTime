@@ -30,13 +30,13 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-            {/* Backdrop */}
+
             <div
                 className="absolute inset-0 bg-primary/50 backdrop-blur-sm"
                 onClick={onClose}
             />
 
-            {/* Modal content */}
+
             <div className="relative bg-white rounded-lg shadow-lg max-w-md w-full mx-4 max-h-[90vh] overflow-auto">
                 {title && (
                     <div className="flex items-center justify-between p-4 border-b border-light/30">

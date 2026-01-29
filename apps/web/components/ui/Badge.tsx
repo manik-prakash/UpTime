@@ -29,7 +29,7 @@ export default function Badge({
                 ${className}
             `}
         >
-            {/* Status dot */}
+
             <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
             {children}
         </span>

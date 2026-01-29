@@ -9,7 +9,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      {/* Hero Section */}
+
       <section className="bg-background py-20 lg:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary mb-6">
@@ -34,7 +34,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
+
       <section id="features" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -119,7 +119,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How It Works Section */}
+
       <section id="how-it-works" className="py-20 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
