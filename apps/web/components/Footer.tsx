@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Footer() {
@@ -8,7 +9,7 @@ export default function Footer() {
 
                     <div className="col-span-1 md:col-span-2">
                         <div className="flex items-center gap-2 mb-4">
-                            <img src="/logo.png" alt="Uptime" className="w-8 h-8 rounded-lg" />
+                            <Image src="/logo.png" alt="Uptime" width={32} height={32} className="w-8 h-8 rounded-lg" />
                             <span className="text-xl font-bold">Uptime</span>
                         </div>
                         <p className="text-light/80 max-w-md">

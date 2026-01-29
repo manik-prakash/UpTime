@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -37,7 +38,7 @@ export default function LoginPage() {
             <Card className="w-full max-w-md">
 
                 <div className="flex items-center justify-center gap-2 mb-8">
-                    <img src="/logo.png" alt="Uptime" className="w-10 h-10 rounded-lg" />
+                    <Image src="/logo.png" alt="Uptime" width={40} height={40} className="w-10 h-10 rounded-lg" />
                     <span className="text-2xl font-bold text-primary">Uptime</span>
                 </div>
 

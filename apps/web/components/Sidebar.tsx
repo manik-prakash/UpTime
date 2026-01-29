@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 const navItems = [
@@ -34,7 +35,7 @@ export default function Sidebar() {
 
                 <div className="p-5 border-b border-secondary/50">
                     <Link href="/dashboard" className="flex items-center gap-2.5 text-white">
-                        <img src="/logo.png" alt="Uptime" className="w-8 h-8 rounded-lg" />
+                        <Image src="/logo.png" alt="Uptime" width={32} height={32} className="rounded-lg" />
                         <span className="text-lg font-bold">Uptime</span>
                     </Link>
                 </div>

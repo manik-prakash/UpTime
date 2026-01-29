@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import Button from "./ui/Button";
 
@@ -8,7 +9,7 @@ export default function Navbar() {
                 <div className="flex items-center justify-between h-16">
 
                     <Link href="/" className="flex items-center gap-2">
-                        <img src="/logo.png" alt="Uptime" className="w-8 h-8 rounded-lg" />
+                        <Image src="/logo.png" alt="Uptime" width={32} height={32} className="w-8 h-8 rounded-lg" />
                         <span className="text-xl font-bold">Uptime</span>
                     </Link>
 

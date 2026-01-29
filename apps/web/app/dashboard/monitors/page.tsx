@@ -71,12 +71,14 @@ export default function MonitorsPage() {
     const getWebsiteStatus = (website: Website): 'up' | 'down' => {
         if (website.ticks.length === 0) return 'down';
         const latestTick = website.ticks[0];
+        if (!latestTick) return 'down';
         return latestTick.status === 'Up' ? 'up' : 'down';
     };
 
     const getLatestResponseTime = (website: Website): number => {
-        if (website.ticks.length === 0) return 0;
-        return website.ticks[0].responseTimeMs;
+        const latestTick = website.ticks[0];
+        if (!latestTick) return 0;
+        return latestTick.responseTimeMs;
     };
 
     const getWebsiteName = (url: string): string => {
