@@ -77,7 +77,7 @@ function UptimeBar({ ticks }: { ticks: Tick[] }) {
                 <div
                     key={tick.id || i}
                     className={`
-                        w-1.5 rounded-sm flex-shrink-0
+                        w-1.5 rounded-sm shrink-0
                         ${tick.status === "Up" ? "bg-up" : "bg-down"}
                         hover:opacity-80 cursor-pointer
                     `}
@@ -87,7 +87,7 @@ function UptimeBar({ ticks }: { ticks: Tick[] }) {
             {Array.from({ length: Math.max(0, 30 - bars.length) }).map((_, i) => (
                 <div
                     key={`empty-${i}`}
-                    className="w-1.5 rounded-sm flex-shrink-0 bg-light/30"
+                    className="w-1.5 rounded-sm shrink-0 bg-light/30"
                 />
             ))}
         </div>

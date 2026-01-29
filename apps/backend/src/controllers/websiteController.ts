@@ -34,6 +34,14 @@ export const createWebsite = async (
         const { url } = parsedData.data;
         const { userID } = req.body;
 
+        // Validate userID from middleware
+        if (!userID) {
+            res.status(401).json({
+                message: "Authentication failed - please login again"
+            });
+            return;
+        }
+
         const website = await prisma.website.create({
             data: {
                 url,
@@ -67,6 +75,11 @@ export const getWebsite = async (
 
         const { websiteId } = parsedParams.data;
         const { userID } = req.body;
+
+        if (!userID) {
+            res.status(401).json({ message: "Authentication failed - please login again" });
+            return;
+        }
 
         const website = await prisma.website.findFirst({
             where: {
@@ -107,6 +120,11 @@ export const getWebsites = async (
 ): Promise<any> => {
     try {
         const { userID } = req.body;
+
+        if (!userID) {
+            res.status(401).json({ message: "Authentication failed - please login again" });
+            return;
+        }
 
         const websites = await prisma.website.findMany({
             where: {
@@ -165,6 +183,11 @@ export const deleteWebsite = async (
         const { websiteId } = parsedParams.data;
         const { userID } = req.body;
 
+        if (!userID) {
+            res.status(401).json({ message: "Authentication failed - please login again" });
+            return;
+        }
+
         const website = await prisma.website.findFirst({
             where: {
                 id: websiteId,
@@ -208,6 +231,11 @@ export const getWebsiteById = async (
 
         const { websiteId } = parsedParams.data;
         const { userID } = req.body;
+
+        if (!userID) {
+            res.status(401).json({ message: "Authentication failed - please login again" });
+            return;
+        }
 
         const website = await prisma.website.findFirst({
             where: {

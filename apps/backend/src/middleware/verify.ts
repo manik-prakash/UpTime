@@ -11,7 +11,8 @@ interface JwtPayload {
 }
 
 export const verify = (req: Request, res: Response, next: NextFunction): void => {
-    const token = req.headers["authorization"]?.split(" ")[1];
+    const authHeader = req.headers["authorization"];
+    const token = authHeader?.split(" ")[1];
 
     if (!token) {
         res.status(401).json({ message: "No token provided" });
@@ -20,10 +21,17 @@ export const verify = (req: Request, res: Response, next: NextFunction): void =>
 
     try {
         const decoded = jwt.verify(token, secret) as JwtPayload;
+
+        // Initialize req.body if it doesn't exist (for GET requests)
+        if (!req.body) {
+            req.body = {};
+        }
+
         // Pass userID through body so controllers can access it
         req.body.userID = decoded.userID;
         next();
     } catch (err) {
+        console.error("Token verification error:", err);
         res.status(403).json({ message: "Invalid token" });
         return;
     }
