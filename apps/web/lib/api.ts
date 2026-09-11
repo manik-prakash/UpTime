@@ -1,5 +1,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+export const AUTH_EXPIRED_EVENT = 'auth:expired';
+
 function getToken(): string | null {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem('token');
@@ -16,11 +18,22 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}): Promi
         (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }
 
-    return fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers,
         credentials: 'include',
     });
+
+    // Only treat 401/403 as a session expiry when the request was actually
+    // authenticated - an unauthenticated login/register failure isn't one.
+    if (token && (response.status === 401 || response.status === 403)) {
+        removeToken();
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+        }
+    }
+
+    return response;
 }
 
 export interface AuthResponse {

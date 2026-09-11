@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { login as apiLogin, register as apiRegister, saveToken, removeToken, isAuthenticated } from './api';
+import { login as apiLogin, register as apiRegister, saveToken, removeToken, isAuthenticated, AUTH_EXPIRED_EVENT } from './api';
 
 interface User {
     email: string;
@@ -36,7 +36,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     const parts = token.split('.');
                     if (parts[1]) {
                         const payload = JSON.parse(base64UrlDecode(parts[1]));
-                        setUser({ email: payload.email });
+                        const isExpired = typeof payload.exp === 'number' && payload.exp * 1000 < Date.now();
+                        if (isExpired) {
+                            removeToken();
+                        } else {
+                            setUser({ email: payload.email });
+                        }
                     } else {
                         removeToken();
                     }
@@ -46,6 +51,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         }
         setIsLoading(false);
+    }, []);
+
+    useEffect(() => {
+        const handleAuthExpired = () => setUser(null);
+        window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
+        return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
     }, []);
 
     const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
