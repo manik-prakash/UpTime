@@ -20,7 +20,7 @@ export const verify = (req: Request, res: Response, next: NextFunction): void =>
     }
 
     try {
-        const decoded = jwt.verify(token, secret) as JwtPayload;
+        const decoded = jwt.verify(token, secret, { algorithms: ["HS256"] }) as JwtPayload;
 
         // Initialize req.body if it doesn't exist (for GET requests)
         if (!req.body) {

@@ -49,7 +49,7 @@ export const signin = async (
         const token = jwt.sign(
             { userID: user.id, email: user.email },
             secret,
-            { expiresIn: "4h" }
+            { expiresIn: "4h", algorithm: "HS256" }
         );
 
         return res.status(200).json({
@@ -99,7 +99,7 @@ export const signup = async (
         const token = jwt.sign(
             { userID: newUser.id, email: newUser.email },
             secret,
-            { expiresIn: "4h" }
+            { expiresIn: "4h", algorithm: "HS256" }
         );
 
         return res.status(201).json({
