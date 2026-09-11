@@ -29,38 +29,32 @@ console.log(`region ${REGION_NAME} -> ${REGION_UUID}`);
 async function checkWebsite(id: string, url: string): Promise<void> {
     const startTime = Date.now();
 
+    let isUp: boolean;
     try {
         await axios.get(url, {
             timeout: 10000,
             validateStatus: (status) => status < 500
         });
-
-        const endTime = Date.now();
-
-        await prisma.websiteTick.create({
-            data: {
-                responseTimeMs: endTime - startTime,
-                status: "Up",
-                regionId: REGION_UUID,
-                websiteId: id
-            }
-        });
-
-        console.log(`${url} up ${endTime - startTime}ms`);
+        isUp = true;
     } catch (error) {
-
-        const endTime = Date.now();
-        await prisma.websiteTick.create({
-            data: {
-                responseTimeMs: endTime - startTime,
-                status: "Down",
-                regionId: REGION_UUID,
-                websiteId: id
-            }
-        });
-
-        console.log(`${url} down ${endTime - startTime}ms`);
+        isUp = false;
     }
+
+    const endTime = Date.now();
+    const status = isUp ? "Up" : "Down";
+
+    // Not caught here: a DB write failure must not be recorded as the site
+    // being down, and should leave the stream entry unacked for retry.
+    await prisma.websiteTick.create({
+        data: {
+            responseTimeMs: endTime - startTime,
+            status,
+            regionId: REGION_UUID,
+            websiteId: id
+        }
+    });
+
+    console.log(`${url} ${status.toLowerCase()} ${endTime - startTime}ms`);
 }
 
 async function processMessages(messages: Array<{ id: string; message: { id: string; url: string } }>) {
