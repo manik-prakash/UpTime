@@ -34,6 +34,8 @@ async function checkWebsite(id: string, url: string): Promise<void> {
     try {
         await axios.get(url, {
             timeout: 10000,
+            // Intentional: "Up" means the host is reachable and responding,
+            // not that the endpoint itself is healthy - 4xx counts as Up.
             validateStatus: (status) => status < 500
         });
         isUp = true;
