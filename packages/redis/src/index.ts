@@ -29,6 +29,13 @@ export async function pushtoStream({ id, url }: website) {
         {
             id,
             url
+        },
+        {
+            TRIM: {
+                strategy: 'MAXLEN',
+                strategyModifier: '~',
+                threshold: 10_000
+            }
         }
     )
     console.log(`added to stream: ${res}`);
