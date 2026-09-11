@@ -4,11 +4,9 @@ import bcrypt from "bcryptjs";
 import { Request, Response, NextFunction } from "express";
 import { prisma } from "@repo/db/client";
 import { authSchema } from "@repo/common/types";
+import { env } from "../env.js";
 
-const secret = process.env.JWT_SECRET_WORD;
-if (!secret) {
-    throw new Error("jwt secret not found");
-}
+const secret = env.JWT_SECRET_WORD;
 
 interface AuthBody {
     email: string;

@@ -1,10 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import { env } from "../env.js";
 
-const secret = process.env.JWT_SECRET_WORD;
-if (!secret) {
-    throw new Error("JWT_SECRET must be defined in environment variables");
-}
+const secret = env.JWT_SECRET_WORD;
 
 interface JwtPayload {
     userID: string;
