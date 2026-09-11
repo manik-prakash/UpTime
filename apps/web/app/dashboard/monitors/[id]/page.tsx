@@ -197,7 +197,7 @@ export default function MonitorDetailPage() {
                     Recent Checks ({ticks.length})
                 </h2>
                 {ticks.length > 0 ? (
-                    <Table columns={tickColumns} data={ticks} />
+                    <Table columns={tickColumns} data={ticks} rowKey={(tick) => tick.id} />
                 ) : (
                     <p className="text-secondary text-center py-8">No checks recorded yet</p>
                 )}

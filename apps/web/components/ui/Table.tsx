@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { Key, ReactNode } from "react";
 
 export interface Column<T> {
     key: keyof T | string;
@@ -11,12 +11,14 @@ interface TableProps<T> {
     columns: Column<T>[];
     data: T[];
     className?: string;
+    rowKey?: (item: T, index: number) => Key;
 }
 
 export default function Table<T extends object>({
     columns,
     data,
     className = "",
+    rowKey,
 }: TableProps<T>) {
     const alignClasses = {
         left: "text-left",
@@ -47,7 +49,7 @@ export default function Table<T extends object>({
                 <tbody className="divide-y divide-light/20">
                     {data.map((item, index) => (
                         <tr
-                            key={index}
+                            key={rowKey ? rowKey(item, index) : index}
                             className="hover:bg-surface-dark/50 transition-colors"
                         >
                             {columns.map((column) => (
