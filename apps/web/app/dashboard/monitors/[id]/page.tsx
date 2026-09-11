@@ -23,21 +23,29 @@ export default function MonitorDetailPage() {
     const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
+        let cancelled = false;
+
         const fetchData = async () => {
             try {
                 const response = await getWebsiteById(websiteId);
+                if (cancelled) return;
                 if (response.website) {
                     setWebsite(response.website);
                 } else {
                     setError(response.message || "Website not found");
                 }
             } catch (err) {
+                if (cancelled) return;
                 setError("Failed to load website");
             } finally {
-                setIsLoading(false);
+                if (!cancelled) setIsLoading(false);
             }
         };
         fetchData();
+
+        return () => {
+            cancelled = true;
+        };
     }, [websiteId]);
 
     const handleDelete = async () => {
