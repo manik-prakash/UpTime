@@ -40,7 +40,7 @@ You'll need Node 18+, a Postgres database, and a Redis instance. There's a `dock
 npm run docker:up      # postgres on 5432, redis on 6379
 ```
 
-> If you already have a Postgres running natively on 5432 (a system service, another docker-compose project, whatever), it'll win over the one in this compose file for anything connecting to `localhost:5432` — I hit exactly this on my own machine. Either stop the other one, or remap the `postgres` service's port in `docker-compose.yml` and adjust `DATABASE_URL` to match.
+> If you already have a Postgres running natively on 5432 (a system service, another docker-compose project, whatever), the container here won't be able to bind that port (ports are restricted to `127.0.0.1` on purpose, so this fails loudly instead of silently routing to the wrong database like it did the first time I hit this). Either stop the other one, or remap the `postgres` service's port in `docker-compose.yml` and adjust `DATABASE_URL` to match.
 
 Install everything from the repo root:
 
