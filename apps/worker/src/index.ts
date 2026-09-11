@@ -1,6 +1,8 @@
 import { prisma } from "@repo/db/client";
-import { readGroups, isAccepted, initializeRedis } from "@repo/redis/client";
+import { readGroups, isAccepted, initializeRedis, reclaimStale } from "@repo/redis/client";
 import axios from "axios";
+
+const STALE_MIN_IDLE_MS = 60_000;
 
 const REGION_NAME = process.env.REGION_ID! || "asia";
 const WORKER_ID = process.env.WORKER_ID! || "worker-1";
@@ -61,6 +63,22 @@ async function checkWebsite(id: string, url: string): Promise<void> {
     }
 }
 
+async function processMessages(messages: Array<{ id: string; message: { id: string; url: string } }>) {
+    console.log(`processing ${messages.length} websites`);
+
+    await Promise.all(
+        messages.map(async ({ id, message }) => {
+            try {
+                await checkWebsite(message.id, message.url);
+
+                await isAccepted(REGION_NAME, id);
+            } catch (error) {
+                console.error(`failed ${id}:`, error);
+            }
+        })
+    );
+}
+
 async function worker() {
     await initializeRedis(REGION_NAME);
 
@@ -68,26 +86,18 @@ async function worker() {
 
     while (true) {
         try {
+            const reclaimed = await reclaimStale(REGION_NAME, WORKER_ID, STALE_MIN_IDLE_MS);
+            if (reclaimed.length > 0) {
+                await processMessages(reclaimed);
+            }
+
             const response = await readGroups(REGION_NAME, WORKER_ID);
 
             if (!response || response.length === 0) {
                 continue;
             }
 
-            console.log(`got ${response.length} websites`);
-
-            await Promise.all(
-                response.map(async ({ id, message }) => {
-                    try {
-                        await checkWebsite(message.id, message.url);
-
-                        await isAccepted(REGION_NAME, id);
-                    } catch (error) {
-                        console.error(`failed ${id}:`, error);
-                    }
-                })
-            );
-
+            await processMessages(response);
         } catch (error) {
             console.error('worker error:', error);
         }

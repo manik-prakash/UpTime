@@ -68,6 +68,34 @@ export async function readGroups(CONSUMER_GROUP: string, workerID: string): Prom
     return messages;
 }
 
+export async function reclaimStale(CONSUMER_GROUP: string, workerID: string, minIdleMs: number): Promise<StreamMessage[]> {
+    const res = await client.xAutoClaim(
+        stream_name,
+        CONSUMER_GROUP,
+        workerID,
+        minIdleMs,
+        '0-0',
+        { COUNT: 10 }
+    );
+
+    // @ts-ignore
+    const messages = res.messages
+        .filter(msg => msg !== null)
+        .map(msg => ({
+            id: msg.id,
+            message: {
+                id: msg.message.id as string,
+                url: msg.message.url as string
+            }
+        }));
+
+    if (messages.length > 0) {
+        console.log(`reclaimed ${messages.length} stale messages for ${CONSUMER_GROUP}/${workerID}`);
+    }
+
+    return messages;
+}
+
 export async function isAccepted(CONSUMER_GROUP: string, eventId: string) {
     console.log(`acking ${eventId}`);
     const res = await client.xAck(stream_name, CONSUMER_GROUP, eventId);
