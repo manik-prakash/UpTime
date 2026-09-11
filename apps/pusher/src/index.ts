@@ -8,7 +8,11 @@ async function pusher() {
         });
 
         for (const website of websites) {
-            await pushtoStream(website);
+            try {
+                await pushtoStream(website);
+            } catch (error) {
+                console.error(`failed to push ${website.id} - ${website.url}:`, error);
+            }
         }
 
         console.log(`pushed ${websites.length} websites`);
