@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { login as apiLogin, register as apiRegister, saveToken, removeToken, isAuthenticated, AUTH_EXPIRED_EVENT } from './api';
+import { login as apiLogin, register as apiRegister, saveToken, removeToken, isAuthenticated, AUTH_EXPIRED_EVENT, type AuthResponse } from './api';
 
 interface User {
     email: string;
@@ -20,6 +20,13 @@ function base64UrlDecode(input: string): string {
     const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
     const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
     return atob(padded);
+}
+
+function formatAuthError(response: AuthResponse, fallback: string): string {
+    if (response.errors && response.errors.length > 0) {
+        return response.errors.map(e => e.message).join(' ');
+    }
+    return response.message || fallback;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -67,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser({ email });
                 return { success: true };
             }
-            return { success: false, error: response.message || 'Login failed' };
+            return { success: false, error: formatAuthError(response, 'Login failed') };
         } catch (error) {
             return { success: false, error: 'Network error. Please try again.' };
         }
@@ -81,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser({ email });
                 return { success: true };
             }
-            return { success: false, error: response.message || 'Registration failed' };
+            return { success: false, error: formatAuthError(response, 'Registration failed') };
         } catch (error) {
             return { success: false, error: 'Network error. Please try again.' };
         }
