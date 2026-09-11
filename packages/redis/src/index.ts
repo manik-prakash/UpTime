@@ -45,7 +45,8 @@ export async function readGroups(CONSUMER_GROUP: string, workerID: string): Prom
             id: '>'
         },
         {
-            COUNT: 5
+            COUNT: 5,
+            BLOCK: 5000
         }
     )
 
