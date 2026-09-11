@@ -58,61 +58,6 @@ export const createWebsite = async (
     }
 };
 
-export const getWebsite = async (
-    req: Request<GetWebsiteParams, {}, AuthenticatedBody>,
-    res: Response,
-    next: NextFunction
-): Promise<any> => {
-    try {
-        const parsedParams = getWebsiteParamsSchema.safeParse(req.params);
-        if (!parsedParams.success) {
-            res.status(400).json({
-                message: "Validation failed",
-                errors: parsedParams.error.issues
-            });
-            return;
-        }
-
-        const { websiteId } = parsedParams.data;
-        const { userID } = req.body;
-
-        if (!userID) {
-            res.status(401).json({ message: "Authentication failed - please login again" });
-            return;
-        }
-
-        const website = await prisma.website.findFirst({
-            where: {
-                userId: userID,
-                id: websiteId,
-            },
-            include: {
-                ticks: {
-                    orderBy: [{
-                        createdAt: 'desc',
-                    }],
-                    take: 1
-                }
-            }
-        });
-
-        if (!website) {
-            res.status(404).json({
-                message: "Website not found"
-            });
-            return;
-        }
-
-        res.json({
-            url: website.url,
-            id: website.id,
-            user_id: website.userId
-        });
-    } catch (err) {
-        next(err);
-    }
-};
-
 export const getWebsites = async (
     req: Request<{}, {}, AuthenticatedBody>,
     res: Response,

@@ -76,20 +76,6 @@ export async function createWebsite(url: string): Promise<CreateWebsiteResponse>
     return response.json();
 }
 
-export interface GetWebsiteResponse {
-    id?: string;
-    url?: string;
-    user_id?: string;
-    message?: string;
-}
-
-export async function getWebsiteStatus(websiteId: string): Promise<GetWebsiteResponse> {
-    const response = await fetchWithAuth(`/api/website/status/${websiteId}`, {
-        method: 'GET',
-    });
-    return response.json();
-}
-
 export interface GetWebsitesResponse {
     websites?: Array<{
         id: string;
