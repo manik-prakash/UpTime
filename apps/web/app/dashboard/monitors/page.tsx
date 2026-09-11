@@ -18,6 +18,7 @@ export default function MonitorsPage() {
     const [error, setError] = useState("");
     const [newUrl, setNewUrl] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
     const fetchWebsites = async () => {
         try {
@@ -58,13 +59,21 @@ export default function MonitorsPage() {
     };
 
     const handleDelete = async (websiteId: string) => {
+        if (deletingIds.has(websiteId)) return;
         if (!confirm("Are you sure you want to delete this monitor?")) return;
 
+        setDeletingIds((prev) => new Set(prev).add(websiteId));
         try {
             await deleteWebsite(websiteId);
             await fetchWebsites();
         } catch (err) {
             setError("Failed to delete monitor");
+        } finally {
+            setDeletingIds((prev) => {
+                const next = new Set(prev);
+                next.delete(websiteId);
+                return next;
+            });
         }
     };
 
@@ -178,8 +187,9 @@ export default function MonitorsPage() {
                                         size="sm"
                                         className="text-down border-down hover:bg-down hover:text-white"
                                         onClick={() => handleDelete(website.id)}
+                                        disabled={deletingIds.has(website.id)}
                                     >
-                                        Delete
+                                        {deletingIds.has(website.id) ? "Deleting..." : "Delete"}
                                     </Button>
                                 </div>
                             </Card>

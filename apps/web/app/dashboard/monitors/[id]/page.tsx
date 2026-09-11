@@ -20,6 +20,7 @@ export default function MonitorDetailPage() {
     const [website, setWebsite] = useState<Website | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -40,13 +41,16 @@ export default function MonitorDetailPage() {
     }, [websiteId]);
 
     const handleDelete = async () => {
+        if (isDeleting) return;
         if (!confirm("Are you sure you want to delete this monitor?")) return;
 
+        setIsDeleting(true);
         try {
             await deleteWebsite(websiteId);
             router.push("/dashboard/monitors");
         } catch (err) {
             setError("Failed to delete monitor");
+            setIsDeleting(false);
         }
     };
 
@@ -148,8 +152,9 @@ export default function MonitorDetailPage() {
                             variant="outline"
                             className="text-down border-down hover:bg-down hover:text-white"
                             onClick={handleDelete}
+                            disabled={isDeleting}
                         >
-                            Delete
+                            {isDeleting ? "Deleting..." : "Delete"}
                         </Button>
                     </div>
                 </div>
