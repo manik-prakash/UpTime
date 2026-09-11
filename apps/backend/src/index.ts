@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import authRoute from './routes/authRoute.js';
 import websiteRoute from './routes/websiteRoute.js';
+import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
@@ -22,6 +23,8 @@ app.get('/health', (req, res) => {
 
 app.use("/auth", authRoute);
 app.use("/api", websiteRoute);
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
     console.log(`server running on port ${PORT}`);
