@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 
 interface BadgeProps {
     children: ReactNode;
-    variant?: "up" | "down" | "degraded" | "neutral";
+    variant?: "up" | "down" | "neutral";
     className?: string;
 }
 
@@ -14,7 +14,6 @@ export default function Badge({
     const variants = {
         up: "bg-up text-white",
         down: "bg-down text-white",
-        degraded: "bg-degraded text-white",
         neutral: "bg-light/50 text-primary",
     };
 

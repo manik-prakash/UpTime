@@ -21,7 +21,6 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}): Promi
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers,
-        credentials: 'include',
     });
 
     // Only treat 401/403 as a session expiry when the request was actually
@@ -56,23 +55,6 @@ export async function register(email: string, password: string): Promise<AuthRes
         body: JSON.stringify({ email, password }),
     });
     return response.json();
-}
-
-export interface Website {
-    id: string;
-    url: string;
-    userId: string;
-    createdAt: string;
-    ticks?: WebsiteTick[];
-}
-
-export interface WebsiteTick {
-    id: string;
-    websiteId: string;
-    regionId: string;
-    responseTimeMs: number;
-    status: 'Up' | 'Down' | 'Unknown';
-    createdAt: string;
 }
 
 export interface CreateWebsiteResponse {

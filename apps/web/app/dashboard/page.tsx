@@ -79,7 +79,6 @@ function UptimeBar({ ticks }: { ticks: Tick[] }) {
                     className={`
                         w-1.5 rounded-sm shrink-0
                         ${tick.status === "Up" ? "bg-up" : "bg-down"}
-                        hover:opacity-80 cursor-pointer
                     `}
                     title={`${new Date(tick.createdAt).toLocaleString()} - ${tick.status}`}
                 />
