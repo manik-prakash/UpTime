@@ -16,6 +16,12 @@ interface AuthContextType {
     logout: () => void;
 }
 
+function base64UrlDecode(input: string): string {
+    const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    return atob(padded);
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -29,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 try {
                     const parts = token.split('.');
                     if (parts[1]) {
-                        const payload = JSON.parse(atob(parts[1]));
+                        const payload = JSON.parse(base64UrlDecode(parts[1]));
                         setUser({ email: payload.email });
                     }
                 } catch {
