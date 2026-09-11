@@ -1,135 +1,95 @@
-# Turborepo starter
+# BetterUptime
 
-This Turborepo starter is maintained by the Turborepo core team.
+This is my take on a Better Uptime / UptimeRobot style monitoring tool — you give it a list of URLs, and it pings them on a schedule, tracks response times, and shows you a dashboard of what's up and what's down. I built it mostly to get hands-on with a real distributed system (queue, workers, multiple regions) instead of another CRUD app.
 
-## Using this example
+It's a Turborepo monorepo: a Next.js dashboard, an Express API, and a small pipeline of two background services (a "pusher" and a "worker") that talk to each other over Redis Streams.
 
-Run the following command:
+## How it actually works
 
-```sh
-npx create-turbo@latest
-```
+Every few minutes, the **pusher** reads every monitored website out of Postgres and drops each one onto a Redis stream. A **worker** — one per region — is sitting on a consumer group for that stream, picks messages up, pings the URL with axios, and writes the result (up/down, response time) back to Postgres as a `WebsiteTick`. The Express **backend** just serves that data to the frontend and handles auth. I went with Redis Streams instead of a simpler setup mainly so I could have multiple regional workers pulling from the same queue without stepping on each other, and so a crashed worker doesn't just lose whatever it was checking — it can reclaim its own stuck messages when it comes back up.
 
-## What's inside?
+The frontend is a pretty standard Next.js app — email/password auth (JWT, bcrypt), a dashboard with uptime stats, and a monitors page to add/remove sites you're watching.
 
-This Turborepo includes the following packages/apps:
+## Stack
 
-### Apps and Packages
+- **Frontend**: Next.js 16 (App Router), React 19, Tailwind v4
+- **Backend**: Express 5, JWT auth, Zod for validation
+- **Database**: Postgres via Prisma 7 (using the new driver-adapter setup, `@prisma/adapter-pg`)
+- **Queue**: Redis Streams, via the `redis` v5 client
+- **Monorepo**: Turborepo + npm workspaces
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
+## Project layout
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+apps/
+  web/       Next.js dashboard
+  backend/   Express API (auth + website CRUD)
+  pusher/    loop that enqueues websites to check
+  worker/    consumer that actually pings sites and writes results
+packages/
+  db/        Prisma schema, migrations, seed script
+  redis/     thin wrapper around the Redis Streams client
+  common/    shared Zod schemas used by both frontend and backend
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+## Running it locally
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+You'll need Node 18+, a Postgres database, and a Redis instance. I don't have a `docker-compose.yml` for these yet — I've just been pointing everything at a local Postgres and a Redis container. Something like:
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+```bash
+docker run -d --name uptime-redis -p 6379:6379 redis:7-alpine
 ```
 
-### Develop
+Install everything from the repo root:
 
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+```bash
+npm install
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+Each app reads its own `.env` file rather than one shared root `.env`, so you'll need to add these:
 
 ```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+# packages/db/.env, apps/pusher/.env, apps/worker/.env
+DATABASE_URL="postgresql://user:password@localhost:5432/uptime?schema=public"
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+# apps/backend/.env (also needs DATABASE_URL)
+JWT_SECRET_WORD="something long and random"
+
+# apps/worker/.env (also needs DATABASE_URL)
+REGION_ID="asia"
+WORKER_ID="worker-1"
 ```
 
-### Remote Caching
+`apps/web` doesn't need a `.env` for local dev — it defaults to hitting the backend at `http://localhost:5000`. Set `NEXT_PUBLIC_API_URL` if you're running the backend somewhere else.
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+Once the env files are in place:
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+```bash
+cd packages/db
+npx prisma migrate deploy   # apply the schema
+npm run db:seed             # optional: adds a test user + a few sample sites
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+Then from the repo root:
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+```bash
+npm run dev
 ```
 
-## Useful Links
+That starts the frontend and backend together (`turbo run dev`). The pusher and worker aren't wired into that yet, so I run those separately when I want the actual monitoring loop running:
 
-Learn more about the power of Turborepo:
+```bash
+cd apps/worker && npm run dev
+cd apps/pusher && npm run dev
+```
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+## Where it stands
+
+This is a personal project I'm actively poking at, not something running in production anywhere. Some things worth knowing if you're digging through the code:
+
+- Checks run on a fixed 3-minute cycle for every site — there's no per-monitor interval or pause/disable yet, though the schema has room for it.
+- Multi-region support exists in the worker (it's keyed off `REGION_ID`), but I've only ever actually run the `asia` region.
+- No test suite yet. I've been leaning on manually running the pipeline end-to-end when I change something in the worker/pusher path.
+- "Up" currently just means the server responded before a 500 — a site returning a 404 still counts as up. That's intentional (I care more about "is the host reachable" than "is this specific page healthy"), but it's worth knowing if the status doesn't match what you'd expect.
+
+If you want a quick way to see whether the pipeline is actually working: seed the DB, start `worker` and `pusher`, and watch `WebsiteTick` rows show up in Postgres within a few minutes.
