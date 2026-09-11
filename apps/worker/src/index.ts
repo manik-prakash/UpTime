@@ -1,7 +1,7 @@
 import { prisma } from "@repo/db/client";
 import { readGroups, isAccepted, initializeRedis, reclaimStale } from "@repo/redis/client";
-import axios from "axios";
 import os from "os";
+import { checkWebsite } from "./checkWebsite.js";
 
 const STALE_MIN_IDLE_MS = 60_000;
 
@@ -27,46 +27,13 @@ if (!region) {
 const REGION_UUID = region.id;
 console.log(`region ${REGION_NAME} -> ${REGION_UUID}`);
 
-async function checkWebsite(id: string, url: string): Promise<void> {
-    const startTime = Date.now();
-
-    let isUp: boolean;
-    try {
-        await axios.get(url, {
-            timeout: 10000,
-            // Intentional: "Up" means the host is reachable and responding,
-            // not that the endpoint itself is healthy - 4xx counts as Up.
-            validateStatus: (status) => status < 500
-        });
-        isUp = true;
-    } catch (error) {
-        isUp = false;
-    }
-
-    const endTime = Date.now();
-    const status = isUp ? "Up" : "Down";
-
-    // Not caught here: a DB write failure must not be recorded as the site
-    // being down, and should leave the stream entry unacked for retry.
-    await prisma.websiteTick.create({
-        data: {
-            responseTimeMs: endTime - startTime,
-            status,
-            regionId: REGION_UUID,
-            websiteId: id
-        }
-    });
-
-    console.log(`${url} ${status.toLowerCase()} ${endTime - startTime}ms`);
-}
-
 async function processMessages(messages: Array<{ id: string; message: { id: string; url: string } }>) {
     console.log(`processing ${messages.length} websites`);
 
     await Promise.all(
         messages.map(async ({ id, message }) => {
             try {
-                await checkWebsite(message.id, message.url);
+                await checkWebsite(message.id, message.url, REGION_UUID);
 
                 await isAccepted(REGION_NAME, id);
             } catch (error) {
