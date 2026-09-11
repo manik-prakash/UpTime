@@ -37,6 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     if (parts[1]) {
                         const payload = JSON.parse(base64UrlDecode(parts[1]));
                         setUser({ email: payload.email });
+                    } else {
+                        removeToken();
                     }
                 } catch {
                     removeToken();
