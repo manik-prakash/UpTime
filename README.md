@@ -34,11 +34,13 @@ packages/
 
 ## Running it locally
 
-You'll need Node 18+, a Postgres database, and a Redis instance. I don't have a `docker-compose.yml` for these yet — I've just been pointing everything at a local Postgres and a Redis container. Something like:
+You'll need Node 18+, a Postgres database, and a Redis instance. There's a `docker-compose.yml` at the root for both:
 
 ```bash
-docker run -d --name uptime-redis -p 6379:6379 redis:7-alpine
+npm run docker:up      # postgres on 5432, redis on 6379
 ```
+
+> If you already have a Postgres running natively on 5432 (a system service, another docker-compose project, whatever), it'll win over the one in this compose file for anything connecting to `localhost:5432` — I hit exactly this on my own machine. Either stop the other one, or remap the `postgres` service's port in `docker-compose.yml` and adjust `DATABASE_URL` to match.
 
 Install everything from the repo root:
 
@@ -46,19 +48,7 @@ Install everything from the repo root:
 npm install
 ```
 
-Each app reads its own `.env` file rather than one shared root `.env`, so you'll need to add these:
-
-```
-# packages/db/.env, apps/pusher/.env, apps/worker/.env
-DATABASE_URL="postgresql://user:password@localhost:5432/uptime?schema=public"
-
-# apps/backend/.env (also needs DATABASE_URL)
-JWT_SECRET_WORD="something long and random"
-
-# apps/worker/.env (also needs DATABASE_URL)
-REGION_ID="asia"
-WORKER_ID="worker-1"
-```
+Each app reads its own `.env` file rather than one shared root `.env` — there's an `.env.example` at the root and in each app/package that needs one (`packages/db`, `apps/backend`, `apps/worker`, `apps/pusher`). Copy each to `.env` in the same folder; the defaults already match `docker-compose.yml`.
 
 `apps/web` doesn't need a `.env` for local dev — it defaults to hitting the backend at `http://localhost:5000`. Set `NEXT_PUBLIC_API_URL` if you're running the backend somewhere else.
 
@@ -76,12 +66,7 @@ Then from the repo root:
 npm run dev
 ```
 
-That starts the frontend and backend together (`turbo run dev`). The pusher and worker aren't wired into that yet, so I run those separately when I want the actual monitoring loop running:
-
-```bash
-cd apps/worker && npm run dev
-cd apps/pusher && npm run dev
-```
+This runs `turbo run dev`, which starts all four apps together — frontend, backend, pusher, and worker. I was wrong in an earlier version of this README claiming the pusher/worker weren't wired in; I hadn't actually checked. They are, and `npm run dev` alone is enough to get the whole pipeline running end to end.
 
 ## Where it stands
 
