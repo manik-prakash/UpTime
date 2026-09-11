@@ -10,14 +10,14 @@ async function main() {
     const hashedPassword = await bcrypt.hash('testpassword123', 10);
 
     const user = await prisma.user.upsert({
-        where: { username: 'testuser' },
+        where: { email: 'testuser@example.com' },
         update: {},
         create: {
-            username: 'testuser',
+            email: 'testuser@example.com',
             password: hashedPassword,
         }
     });
-    console.log(`user: ${user.id} (${user.username})`);
+    console.log(`user: ${user.id} (${user.email})`);
 
     console.log('creating region...');
     const region = await prisma.region.upsert({
