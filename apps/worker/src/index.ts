@@ -1,5 +1,5 @@
 import { prisma } from "@repo/db/client";
-import { readGroups, isAccepted } from "@repo/redis/client";
+import { readGroups, isAccepted, initializeRedis } from "@repo/redis/client";
 import axios from "axios";
 
 const REGION_NAME = process.env.REGION_ID! || "asia";
@@ -62,6 +62,8 @@ async function checkWebsite(id: string, url: string): Promise<void> {
 }
 
 async function worker() {
+    await initializeRedis(REGION_NAME);
+
     console.log(`worker ${WORKER_ID} started in ${REGION_NAME}`);
 
     while (true) {

@@ -1,7 +1,6 @@
 import { createClient } from 'redis';
 
 const STREAM_NAME = "uptime:website";
-const CONSUMER_GROUP = "asia";
 
 let client: ReturnType<typeof createClient> | null = null;
 
@@ -15,19 +14,19 @@ async function getClient() {
     return client;
 }
 
-export async function initializeRedis(): Promise<void> {
-    console.log('starting redis init...');
+export async function initializeRedis(consumerGroup: string): Promise<void> {
+    console.log(`starting redis init for group "${consumerGroup}"...`);
 
     const redisClient = await getClient();
 
     try {
-        await redisClient.xGroupCreate(STREAM_NAME, CONSUMER_GROUP, '$', {
+        await redisClient.xGroupCreate(STREAM_NAME, consumerGroup, '$', {
             MKSTREAM: true
         });
-        console.log(`created stream "${STREAM_NAME}" with group "${CONSUMER_GROUP}"`);
+        console.log(`created stream "${STREAM_NAME}" with group "${consumerGroup}"`);
     } catch (error: any) {
         if (error?.message?.includes('BUSYGROUP')) {
-            console.log(`group "${CONSUMER_GROUP}" already exists`);
+            console.log(`group "${consumerGroup}" already exists`);
         } else {
             console.error('error creating group:', error);
             throw error;
@@ -44,4 +43,4 @@ export async function initializeRedis(): Promise<void> {
     console.log('redis init done');
 }
 
-export { getClient, STREAM_NAME, CONSUMER_GROUP };
+export { getClient, STREAM_NAME };
