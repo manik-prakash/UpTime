@@ -1,11 +1,12 @@
 import { prisma } from "@repo/db/client";
 import { readGroups, isAccepted, initializeRedis, reclaimStale } from "@repo/redis/client";
 import axios from "axios";
+import os from "os";
 
 const STALE_MIN_IDLE_MS = 60_000;
 
 const REGION_NAME = process.env.REGION_ID! || "asia";
-const WORKER_ID = process.env.WORKER_ID! || "worker-1";
+const WORKER_ID = process.env.WORKER_ID || `worker-${os.hostname()}-${process.pid}`;
 
 if (!REGION_NAME) {
     throw new Error("region id env var missing");
