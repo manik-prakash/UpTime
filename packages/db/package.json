@@ -10,6 +10,7 @@
     }
   },
   "scripts": {
+    "prebuild": "prisma generate",
     "build": "tsc -b",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --name automated && prisma generate",
