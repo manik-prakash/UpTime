@@ -68,13 +68,26 @@ npm run dev
 
 This runs `turbo run dev`, which starts all four apps together — frontend, backend, pusher, and worker. I was wrong in an earlier version of this README claiming the pusher/worker weren't wired in; I hadn't actually checked. They are, and `npm run dev` alone is enough to get the whole pipeline running end to end.
 
+## Testing
+
+```bash
+npm run test          # everything (turbo run test)
+```
+
+- `packages/common` and `apps/worker` have plain unit tests (schema validation, the up/down check logic with axios mocked out).
+- `apps/backend` has both unit tests (auth middleware, error handler) and integration tests that run real HTTP requests against the Express app via supertest, hitting a real Postgres.
+- `packages/redis` has an integration test against a real Redis instance — it pushes a message through the actual stream, reads it via a consumer group, and verifies a message left pending by a "dead" consumer gets reclaimed. This one exists specifically because that reclaim path is what silently broke early on (see the commit history if you're curious).
+
+The integration tests need Postgres/Redis running and migrations applied — `npm run docker:up` plus `npx prisma migrate deploy` (from `packages/db`) covers both.
+
+CI (`.github/workflows/ci.yml`) runs build + type-check on every push/PR, plus the full test suite against real Postgres/Redis service containers.
+
 ## Where it stands
 
 This is a personal project I'm actively poking at, not something running in production anywhere. Some things worth knowing if you're digging through the code:
 
 - Checks run on a fixed 3-minute cycle for every site — there's no per-monitor interval or pause/disable yet, though the schema has room for it.
 - Multi-region support exists in the worker (it's keyed off `REGION_ID`), but I've only ever actually run the `asia` region.
-- No test suite yet. I've been leaning on manually running the pipeline end-to-end when I change something in the worker/pusher path.
 - "Up" currently just means the server responded before a 500 — a site returning a 404 still counts as up. That's intentional (I care more about "is the host reachable" than "is this specific page healthy"), but it's worth knowing if the status doesn't match what you'd expect.
 
 If you want a quick way to see whether the pipeline is actually working: seed the DB, start `worker` and `pusher`, and watch `WebsiteTick` rows show up in Postgres within a few minutes.
