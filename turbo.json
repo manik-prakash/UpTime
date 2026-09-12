@@ -29,6 +29,18 @@
         "^check-types"
       ]
     },
+    "test": {
+      "dependsOn": [
+        "^build"
+      ],
+      "env": [
+        "DATABASE_URL",
+        "JWT_SECRET_WORD",
+        "REGION_ID",
+        "WORKER_ID"
+      ],
+      "cache": false
+    },
     "dev": {
       "dependsOn": [
         "^build"
